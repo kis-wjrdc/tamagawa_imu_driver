@@ -45,6 +45,7 @@
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/convert.h>
+#include <cmath>
 
 using namespace boost::asio;
 
@@ -182,11 +183,11 @@ int main(int argc, char** argv)
         imu_msg.linear_acceleration.z = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
 
         raw_data = ((((rbuf[29] << 8) & 0xFFFFFF00) | (rbuf[30] & 0x000000FF)));
-        roll  = raw_data * (100 / pow(2, 15));  // LSB & unit [deg]
+        roll  = raw_data * (100 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
         raw_data = ((((rbuf[31] << 8) & 0xFFFFFF00) | (rbuf[32] & 0x000000FF)));
-        pitch = raw_data * (100 / pow(2, 15));  // LSB & unit [deg]
+        pitch = raw_data * (100 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
         raw_data = ((((rbuf[33] << 8) & 0xFFFFFF00) | (rbuf[34] & 0x000000FF)));
-        yaw = raw_data * (100 / pow(2, 15));  // LSB & unit [deg]
+        yaw = raw_data * (100 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
 
         // オイラー角をクオータニオンに変換
         tf2::Quaternion quaternion;
