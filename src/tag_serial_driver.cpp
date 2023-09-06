@@ -43,6 +43,8 @@
 #include <sys/ioctl.h>
 #include <boost/asio.hpp>
 #include <diagnostic_updater/diagnostic_updater.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/convert.h>
 
 using namespace boost::asio;
 
@@ -111,7 +113,7 @@ int main(int argc, char** argv)
   updater.add("imu_bit_error", check_bit_error);
   updater.add("imu_connection", check_connection);
 
-  pnh.param<std::string>("device", device, "/dev/ttyUSB0");
+  pnh.param<std::string>("device", device, "/dev/ttyS0");
   pnh.param<std::string>("imu_type", imu_type, "noGPS");
   pnh.param<std::string>("rate", rate, "50");
   pnh.param<bool>("use_fog", use_fog, false);
@@ -137,6 +139,10 @@ int main(int argc, char** argv)
   imu_msg.orientation.y = 0.0;
   imu_msg.orientation.z = 0.0;
   imu_msg.orientation.w = 1.0;
+
+  double roll = M_PI/4;      // ロール (45度)
+  double pitch = M_PI/6;     // ピッチ (30度)
+  double yaw = M_PI/3;       // ヨー (60度)
 
   size_t counter;
   int16_t raw_data;
@@ -167,12 +173,30 @@ int main(int argc, char** argv)
                   (rbuf[22] & 0x000000FF);
         imu_msg.angular_velocity.z =
             raw_data_2 * (200 / pow(2, 31)) * M_PI / 180;  // LSB & unit [deg/s] => [rad/s]
+        
         raw_data = ((((rbuf[23] << 8) & 0xFFFFFF00) | (rbuf[24] & 0x000000FF)));
         imu_msg.linear_acceleration.x = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
         raw_data = ((((rbuf[25] << 8) & 0xFFFFFF00) | (rbuf[26] & 0x000000FF)));
         imu_msg.linear_acceleration.y = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
         raw_data = ((((rbuf[27] << 8) & 0xFFFFFF00) | (rbuf[28] & 0x000000FF)));
         imu_msg.linear_acceleration.z = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
+
+        raw_data = ((((rbuf[29] << 8) & 0xFFFFFF00) | (rbuf[30] & 0x000000FF)));
+        roll  = raw_data * (100 / pow(2, 15));  // LSB & unit [deg]
+        raw_data = ((((rbuf[31] << 8) & 0xFFFFFF00) | (rbuf[32] & 0x000000FF)));
+        pitch = raw_data * (100 / pow(2, 15));  // LSB & unit [deg]
+        raw_data = ((((rbuf[33] << 8) & 0xFFFFFF00) | (rbuf[34] & 0x000000FF)));
+        yaw = raw_data * (100 / pow(2, 15));  // LSB & unit [deg]
+
+        // オイラー角をクオータニオンに変換
+        tf2::Quaternion quaternion;
+        quaternion.setRPY(roll, pitch, yaw);  
+        
+        imu_msg.orientation.x = quaternion.x();
+        imu_msg.orientation.y = quaternion.y();
+        imu_msg.orientation.z = quaternion.z();
+        imu_msg.orientation.w = quaternion.w();
+        
         pub.publish(imu_msg);
       }
       else
