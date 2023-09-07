@@ -117,7 +117,7 @@ int main(int argc, char** argv)
   pnh.param<std::string>("device", device, "/dev/ttyS0");
   pnh.param<std::string>("imu_type", imu_type, "noGPS");
   pnh.param<std::string>("rate", rate, "50");
-  pnh.param<bool>("use_fog", use_fog, false);
+  pnh.param<bool>("use_fog", use_fog, true);
 
   std::cout << "device= " << device << " imu_type= " << imu_type << " rate= " << rate << " use_fog= " << std::boolalpha << use_fog << std::endl;
 
@@ -183,11 +183,11 @@ int main(int argc, char** argv)
         imu_msg.linear_acceleration.z = raw_data * (100 / pow(2, 15));  // LSB & unit [m/s^2]
 
         raw_data = ((((rbuf[29] << 8) & 0xFFFFFF00) | (rbuf[30] & 0x000000FF)));
-        roll  = raw_data * (100 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
+        roll  = raw_data * (180 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
         raw_data = ((((rbuf[31] << 8) & 0xFFFFFF00) | (rbuf[32] & 0x000000FF)));
-        pitch = raw_data * (100 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
+        pitch = - raw_data * (180 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
         raw_data = ((((rbuf[33] << 8) & 0xFFFFFF00) | (rbuf[34] & 0x000000FF)));
-        yaw = raw_data * (100 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
+        yaw = - raw_data * (180 / pow(2, 15))* M_PI / 180.0;  // LSB & unit [rad]
 
         // オイラー角をクオータニオンに変換
         tf2::Quaternion quaternion;
