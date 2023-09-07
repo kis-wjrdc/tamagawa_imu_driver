@@ -10,7 +10,11 @@ This package contains ROS driver for TAMAGAWA SEIKI IMUs.
 
 This package requires can_msgs.
 
-		sudo apt-get install ros-kinetic-can-msgs  
+		sudo apt-get install ros-melodic-can-msgs
+
+clone
+
+make
 
 ## Usage (CAN)
 
